@@ -501,7 +501,7 @@
         <div class="brand-mark">NI</div>
         <div>
           <h1>NPTE Institute</h1>
-          <p>Quiz Video Studio · 90s vertical format</p>
+          <p>Quiz Video Studio · 78s vertical · 60s quiz</p>
         </div>
       </div>
       <div class="badge">Social · 1080×1920</div>
@@ -578,7 +578,7 @@
           </div>
 
           <button type="button" class="btn btn-primary" id="generateBtn">
-            Generate 90-second video
+            Generate 78-second video
           </button>
         </div>
       </div>
@@ -601,9 +601,9 @@
         </div>
 
         <div class="timeline">
-          <span><strong>0–65s</strong>Question</span>
-          <span><strong>65–70s</strong>Highlight</span>
-          <span><strong>70–90s</strong>Rationale</span>
+          <span><strong>0–60s</strong>Question</span>
+          <span><strong>60–63s</strong>Highlight</span>
+          <span><strong>63–78s</strong>Rationale</span>
         </div>
 
         <div class="download-panel" id="downloadPanel">
@@ -635,10 +635,14 @@
     const WIDTH = 1080;
     const HEIGHT = 1920;
     const FPS = 30;
-    const TOTAL_SECONDS = 90;
-    const COUNTDOWN_END = 65;
-    const HIGHLIGHT_DURATION = 5;
-    const RATIONALE_START = 70;
+    // Timeline: 60s question countdown → 3s correct highlight → 15s rationale
+    const QUESTION_SECONDS = 60;
+    const HIGHLIGHT_SECONDS = 3;
+    const RATIONALE_SECONDS = 15;
+    const TOTAL_SECONDS = QUESTION_SECONDS + HIGHLIGHT_SECONDS + RATIONALE_SECONDS; // 78
+    const COUNTDOWN_END = QUESTION_SECONDS;          // 60
+    const HIGHLIGHT_END = QUESTION_SECONDS + HIGHLIGHT_SECONDS; // 63
+    const RATIONALE_START = HIGHLIGHT_END;           // 63
 
     const COLORS = {
       navy: '#0A1F44',
@@ -803,6 +807,7 @@
     // ---------- Frame renderer ----------
     function renderFrame(timeSeconds, data) {
       const { question, options, correct, rationale, brandLine } = data;
+      const t = Math.max(0, Math.min(timeSeconds, TOTAL_SECONDS));
 
       // Background
       const grad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
@@ -812,257 +817,296 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-      if (timeSeconds < RATIONALE_START) {
-        // ===== QUESTION PHASE =====
-        drawBrandLogo(ctx, WIDTH / 2, 150, 95);
-
-        ctx.fillStyle = COLORS.gold;
-        ctx.font = '600 32px Inter, system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText(brandLine || 'NPTE Practice Question', WIDTH / 2, 290);
-
-        ctx.strokeStyle = COLORS.gold;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(WIDTH / 2 - 150, 318);
-        ctx.lineTo(WIDTH / 2 + 150, 318);
-        ctx.stroke();
-
-        // Question box – adaptive height
-        const qMaxW = WIDTH - 100;
-        const qMaxH = 480;
-        const qFit = fitText(ctx, question, qMaxW, qMaxH, 42, '600', 1.22);
-        const qPad = 36;
-        const qH = Math.min(520, Math.max(160, qFit.height + qPad * 2));
-        const qY = 350;
-
-        ctx.fillStyle = 'rgba(255,255,255,0.07)';
-        roundRect(ctx, 32, qY, WIDTH - 64, qH, 20);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.14)';
-        ctx.lineWidth = 2.5;
-        roundRect(ctx, 32, qY, WIDTH - 64, qH, 20);
-        ctx.stroke();
-
-        ctx.fillStyle = COLORS.white;
-        ctx.font = `600 ${qFit.fontSize}px Inter, system-ui, sans-serif`;
-        ctx.textAlign = 'left';
-        const qTextY = qY + qPad + qFit.lineHeight * 0.75;
-        drawWrapped(ctx, question, 58, qTextY, qMaxW, qFit.lineHeight, 12);
-
-        // Options
-        let optY = qY + qH + 22;
-        const letters = ['A', 'B', 'C', 'D'];
-        const highlightProg = timeSeconds >= COUNTDOWN_END
-          ? easeOut(Math.min(1, (timeSeconds - COUNTDOWN_END) / HIGHLIGHT_DURATION))
-          : 0;
-
-        // Pre-measure so we can scale if needed
-        const fits = {};
-        let totalH = 0;
-        letters.forEach(L => {
-          const fit = fitText(ctx, options[L] || '', WIDTH - 210, 160, 34, '500', 1.22);
-          fits[L] = fit;
-          totalH += Math.max(100, fit.height + 44) + 14;
-        });
-
-        const spaceLeft = 1680 - optY;
-        if (totalH > spaceLeft && spaceLeft > 200) {
-          const scale = spaceLeft / totalH;
-          letters.forEach(L => {
-            fits[L].fontSize = Math.max(17, Math.floor(fits[L].fontSize * scale));
-            fits[L].lineHeight = Math.round(fits[L].fontSize * 1.22);
-            const m = measureWrapped(ctx, options[L] || '', WIDTH - 210, fits[L].lineHeight, 8);
-            fits[L].height = m.height;
-          });
-        }
-
-        letters.forEach(L => {
-          const text = options[L] || '';
-          const fit = fits[L];
-          const h = Math.max(100, fit.height + 44);
-          const isCorrect = L === correct;
-          const prog = isCorrect ? highlightProg : 0;
-
-          if (prog > 0) {
-            ctx.shadowColor = `rgba(16,185,129,${0.4 * prog})`;
-            ctx.shadowBlur = 28 * prog;
-            ctx.fillStyle = `rgba(16,185,129,${0.14 * prog})`;
-          } else {
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = 'rgba(255,255,255,0.07)';
-          }
-          roundRect(ctx, 32, optY, WIDTH - 64, h, 18);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          ctx.lineWidth = 2.5 + prog * 2;
-          ctx.strokeStyle = prog > 0
-            ? `rgba(16,185,129,${0.45 + 0.5 * prog})`
-            : 'rgba(255,255,255,0.13)';
-          roundRect(ctx, 32, optY, WIDTH - 64, h, 18);
-          ctx.stroke();
-
-          // Letter badge
-          const scale = 1 + prog * 0.08;
-          ctx.save();
-          ctx.translate(108, optY + h / 2);
-          ctx.scale(scale, scale);
-          ctx.beginPath();
-          ctx.arc(0, 0, 28, 0, Math.PI * 2);
-          ctx.fillStyle = prog > 0.25 ? COLORS.success : COLORS.teal;
-          ctx.fill();
-          ctx.fillStyle = COLORS.white;
-          ctx.font = '700 24px Inter, system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(L, 0, 1);
-          ctx.restore();
-
-          // Option text
-          ctx.fillStyle = (timeSeconds >= COUNTDOWN_END && !isCorrect)
-            ? 'rgba(255,255,255,0.35)'
-            : COLORS.white;
-          ctx.font = `500 ${fit.fontSize}px Inter, system-ui, sans-serif`;
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'alphabetic';
-          const firstY = optY + h / 2 - fit.height / 2 + fit.lineHeight * 0.72;
-          drawWrapped(ctx, text, 158, firstY, WIDTH - 210, fit.lineHeight, 6);
-
-          optY += h + 14;
-        });
-
-        // Countdown or highlight label
-        if (timeSeconds < COUNTDOWN_END) {
-          const remaining = Math.max(0, Math.ceil(COUNTDOWN_END - timeSeconds));
-          const progress = (COUNTDOWN_END - timeSeconds) / COUNTDOWN_END;
-          const cx = WIDTH / 2;
-          const cy = 1790;
-          const r = 78;
-
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.38)';
-          ctx.fill();
-
-          ctx.beginPath();
-          ctx.arc(cx, cy, r - 8, -Math.PI / 2, -Math.PI / 2 + (1 - progress) * Math.PI * 2);
-          ctx.strokeStyle = COLORS.tealLight;
-          ctx.lineWidth = 9;
-          ctx.lineCap = 'round';
-          ctx.stroke();
-
-          ctx.fillStyle = COLORS.white;
-          ctx.font = '800 60px Inter, system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(String(remaining), cx, cy - 4);
-
-          ctx.fillStyle = 'rgba(255,255,255,0.65)';
-          ctx.font = '500 16px Inter, system-ui, sans-serif';
-          ctx.fillText('SECONDS', cx, cy + 32);
-        } else {
-          ctx.globalAlpha = highlightProg;
-          ctx.fillStyle = COLORS.success;
-          ctx.font = '700 28px Inter, system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('✓  CORRECT ANSWER HIGHLIGHTED', WIDTH / 2, 1790);
-          ctx.globalAlpha = 1;
-        }
+      // Crossfade: question phase fully visible until countdown ends,
+      // then 0.6s blend into rationale during highlight window.
+      const transitionStart = COUNTDOWN_END;
+      const transitionLen = 0.85;
+      let qAlpha = 1;
+      let rAlpha = 0;
+      if (t < transitionStart) {
+        qAlpha = 1;
+        rAlpha = 0;
+      } else if (t < transitionStart + transitionLen) {
+        const p = easeOut((t - transitionStart) / transitionLen);
+        qAlpha = 1 - p;
+        rAlpha = p;
       } else {
-        // ===== RATIONALE PHASE =====
-        const t = easeOut(Math.min(1, (timeSeconds - RATIONALE_START) / 1.1));
-        drawBrandLogo(ctx, WIDTH / 2, 150, 95);
+        qAlpha = 0;
+        rAlpha = 1;
+      }
 
-        ctx.globalAlpha = t;
+      if (qAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = qAlpha;
+        drawQuestionPhase(t, data);
+        ctx.restore();
+      }
+      if (rAlpha > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = rAlpha;
+        drawRationalePhase(t, data);
+        ctx.restore();
+      }
+    }
 
-        ctx.fillStyle = COLORS.white;
-        ctx.font = '700 40px Inter, system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText('NPTE Institute', WIDTH / 2, 290);
+    function drawQuestionPhase(timeSeconds, data) {
+      const { question, options, correct, brandLine } = data;
 
-        // Correct banner
-        ctx.fillStyle = 'rgba(16,185,129,0.14)';
-        roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+      drawBrandLogo(ctx, WIDTH / 2, 150, 95);
+
+      ctx.fillStyle = COLORS.gold;
+      ctx.font = '600 32px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(brandLine || 'NPTE Practice Question', WIDTH / 2, 290);
+
+      ctx.strokeStyle = COLORS.gold;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(WIDTH / 2 - 150, 318);
+      ctx.lineTo(WIDTH / 2 + 150, 318);
+      ctx.stroke();
+
+      // Question box
+      const qMaxW = WIDTH - 100;
+      const qMaxH = 480;
+      const qFit = fitText(ctx, question, qMaxW, qMaxH, 42, '600', 1.22);
+      const qPad = 36;
+      const qH = Math.min(520, Math.max(160, qFit.height + qPad * 2));
+      const qY = 350;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      roundRect(ctx, 32, qY, WIDTH - 64, qH, 20);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, 32, qY, WIDTH - 64, qH, 20);
+      ctx.stroke();
+
+      ctx.fillStyle = COLORS.white;
+      ctx.font = `600 ${qFit.fontSize}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = 'left';
+      const qTextY = qY + qPad + qFit.lineHeight * 0.75;
+      drawWrapped(ctx, question, 58, qTextY, qMaxW, qFit.lineHeight, 12);
+
+      // Options + highlight progress
+      let optY = qY + qH + 22;
+      const letters = ['A', 'B', 'C', 'D'];
+      const highlightProg = timeSeconds >= COUNTDOWN_END
+        ? easeOut(Math.min(1, (timeSeconds - COUNTDOWN_END) / HIGHLIGHT_SECONDS))
+        : 0;
+
+      const fits = {};
+      let totalH = 0;
+      letters.forEach(L => {
+        const fit = fitText(ctx, options[L] || '', WIDTH - 210, 160, 34, '500', 1.22);
+        fits[L] = fit;
+        totalH += Math.max(100, fit.height + 44) + 14;
+      });
+
+      const spaceLeft = 1680 - optY;
+      if (totalH > spaceLeft && spaceLeft > 200) {
+        const scale = spaceLeft / totalH;
+        letters.forEach(L => {
+          fits[L].fontSize = Math.max(17, Math.floor(fits[L].fontSize * scale));
+          fits[L].lineHeight = Math.round(fits[L].fontSize * 1.22);
+          const m = measureWrapped(ctx, options[L] || '', WIDTH - 210, fits[L].lineHeight, 8);
+          fits[L].height = m.height;
+        });
+      }
+
+      letters.forEach(L => {
+        const text = options[L] || '';
+        const fit = fits[L];
+        const h = Math.max(100, fit.height + 44);
+        const isCorrect = L === correct;
+        const prog = isCorrect ? highlightProg : 0;
+
+        if (prog > 0) {
+          ctx.shadowColor = `rgba(16,185,129,${0.4 * prog})`;
+          ctx.shadowBlur = 28 * prog;
+          ctx.fillStyle = `rgba(16,185,129,${0.14 * prog})`;
+        } else {
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        }
+        roundRect(ctx, 32, optY, WIDTH - 64, h, 18);
         ctx.fill();
-        ctx.strokeStyle = COLORS.success;
-        ctx.lineWidth = 3.5;
-        roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+        ctx.shadowBlur = 0;
+
+        ctx.lineWidth = 2.5 + prog * 2;
+        ctx.strokeStyle = prog > 0
+          ? `rgba(16,185,129,${0.45 + 0.5 * prog})`
+          : 'rgba(255,255,255,0.13)';
+        roundRect(ctx, 32, optY, WIDTH - 64, h, 18);
         ctx.stroke();
 
-        ctx.fillStyle = COLORS.success;
-        ctx.font = '700 30px Inter, system-ui, sans-serif';
+        const scale = 1 + prog * 0.08;
+        ctx.save();
+        ctx.translate(108, optY + h / 2);
+        ctx.scale(scale, scale);
+        ctx.beginPath();
+        ctx.arc(0, 0, 28, 0, Math.PI * 2);
+        ctx.fillStyle = prog > 0.25 ? COLORS.success : COLORS.teal;
+        ctx.fill();
+        ctx.fillStyle = COLORS.white;
+        ctx.font = '700 24px Inter, system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('✓  CORRECT ANSWER:  ' + correct, WIDTH / 2, 372);
+        ctx.fillText(L, 0, 1);
+        ctx.restore();
 
-        // Correct option card
-        const correctText = options[correct] || '';
-        const cFit = fitText(ctx, correctText, WIDTH - 240, 100, 30, '600', 1.22);
-        const cH = Math.max(120, cFit.height + 48);
-        const cY = 440;
+        ctx.fillStyle = (timeSeconds >= COUNTDOWN_END && !isCorrect)
+          ? 'rgba(255,255,255,0.35)'
+          : COLORS.white;
+        ctx.font = `500 ${fit.fontSize}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        const firstY = optY + h / 2 - fit.height / 2 + fit.lineHeight * 0.72;
+        drawWrapped(ctx, text, 158, firstY, WIDTH - 210, fit.lineHeight, 6);
 
-        ctx.fillStyle = 'rgba(16,185,129,0.10)';
-        roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
-        ctx.fill();
-        ctx.strokeStyle = COLORS.success;
-        ctx.lineWidth = 3.5;
-        roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
-        ctx.stroke();
+        optY += h + 14;
+      });
+
+      // Countdown ring — smooth continuous remaining time
+      if (timeSeconds < COUNTDOWN_END) {
+        const remainingExact = Math.max(0, COUNTDOWN_END - timeSeconds);
+        // Display integer that only changes once per second (no skipping)
+        const remainingDisplay = Math.max(0, Math.ceil(remainingExact - 0.001));
+        const progress = remainingExact / COUNTDOWN_END; // 1 → 0
+        const cx = WIDTH / 2;
+        const cy = 1790;
+        const r = 78;
 
         ctx.beginPath();
-        ctx.arc(120, cY + cH / 2, 32, 0, Math.PI * 2);
-        ctx.fillStyle = COLORS.success;
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.38)';
         ctx.fill();
+
+        // Track
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - 8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 9;
+        ctx.stroke();
+
+        // Progress arc (smooth)
+        ctx.beginPath();
+        ctx.arc(cx, cy, r - 8, -Math.PI / 2, -Math.PI / 2 + (1 - progress) * Math.PI * 2);
+        ctx.strokeStyle = COLORS.tealLight;
+        ctx.lineWidth = 9;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
         ctx.fillStyle = COLORS.white;
+        ctx.font = '800 60px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(remainingDisplay), cx, cy - 4);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.65)';
+        ctx.font = '500 16px Inter, system-ui, sans-serif';
+        ctx.fillText('SECONDS', cx, cy + 32);
+      } else {
+        // Brief "correct" label during highlight
+        const hp = easeOut(Math.min(1, (timeSeconds - COUNTDOWN_END) / HIGHLIGHT_SECONDS));
+        ctx.globalAlpha = hp;
+        ctx.fillStyle = COLORS.success;
         ctx.font = '700 28px Inter, system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(correct, 120, cY + cH / 2 + 1);
-
-        ctx.fillStyle = COLORS.white;
-        ctx.font = `600 ${cFit.fontSize}px Inter, system-ui, sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'alphabetic';
-        const cFirstY = cY + cH / 2 - cFit.height / 2 + cFit.lineHeight * 0.72;
-        drawWrapped(ctx, correctText, 180, cFirstY, WIDTH - 240, cFit.lineHeight, 4);
-
-        // Rationale box
-        const ratMaxW = WIDTH - 120;
-        const ratFit = fitText(ctx, rationale, ratMaxW, 920, 30, '500', 1.32);
-        const ratH = Math.min(980, Math.max(420, ratFit.height + 130));
-        const ratY = cY + cH + 28;
-
-        ctx.fillStyle = 'rgba(255,255,255,0.06)';
-        roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.13)';
-        ctx.lineWidth = 2.5;
-        roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
-        ctx.stroke();
-
-        ctx.fillStyle = COLORS.gold;
-        ctx.font = '700 24px Inter, system-ui, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText('RATIONALE', 70, ratY + 32);
-
-        ctx.fillStyle = COLORS.white;
-        ctx.font = `500 ${ratFit.fontSize}px Inter, system-ui, sans-serif`;
-        const ratTextY = ratY + 78 + ratFit.lineHeight * 0.2;
-        drawWrapped(ctx, rationale, 70, ratTextY, ratMaxW, ratFit.lineHeight, 28);
-
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.font = '500 18px Inter, system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('NPTE Institute  ·  Elevate Your Practice', WIDTH / 2, HEIGHT - 36);
-
+        ctx.fillText('✓  CORRECT ANSWER HIGHLIGHTED', WIDTH / 2, 1790);
         ctx.globalAlpha = 1;
       }
+    }
+
+    function drawRationalePhase(timeSeconds, data) {
+      const { options, correct, rationale } = data;
+
+      drawBrandLogo(ctx, WIDTH / 2, 150, 95);
+
+      ctx.fillStyle = COLORS.white;
+      ctx.font = '700 40px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('NPTE Institute', WIDTH / 2, 290);
+
+      // Correct banner
+      ctx.fillStyle = 'rgba(16,185,129,0.14)';
+      roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+      ctx.fill();
+      ctx.strokeStyle = COLORS.success;
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+      ctx.stroke();
+
+      ctx.fillStyle = COLORS.success;
+      ctx.font = '700 30px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✓  CORRECT ANSWER:  ' + correct, WIDTH / 2, 372);
+
+      // Correct option card
+      const correctText = options[correct] || '';
+      const cFit = fitText(ctx, correctText, WIDTH - 240, 100, 30, '600', 1.22);
+      const cH = Math.max(120, cFit.height + 48);
+      const cY = 440;
+
+      ctx.fillStyle = 'rgba(16,185,129,0.10)';
+      roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
+      ctx.fill();
+      ctx.strokeStyle = COLORS.success;
+      ctx.lineWidth = 3.5;
+      roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(120, cY + cH / 2, 32, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS.success;
+      ctx.fill();
+      ctx.fillStyle = COLORS.white;
+      ctx.font = '700 28px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(correct, 120, cY + cH / 2 + 1);
+
+      ctx.fillStyle = COLORS.white;
+      ctx.font = `600 ${cFit.fontSize}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      const cFirstY = cY + cH / 2 - cFit.height / 2 + cFit.lineHeight * 0.72;
+      drawWrapped(ctx, correctText, 180, cFirstY, WIDTH - 240, cFit.lineHeight, 4);
+
+      // Rationale box
+      const ratMaxW = WIDTH - 120;
+      const ratFit = fitText(ctx, rationale, ratMaxW, 920, 30, '500', 1.32);
+      const ratH = Math.min(980, Math.max(420, ratFit.height + 130));
+      const ratY = cY + cH + 28;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.13)';
+      ctx.lineWidth = 2.5;
+      roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
+      ctx.stroke();
+
+      ctx.fillStyle = COLORS.gold;
+      ctx.font = '700 24px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('RATIONALE', 70, ratY + 32);
+
+      ctx.fillStyle = COLORS.white;
+      ctx.font = `500 ${ratFit.fontSize}px Inter, system-ui, sans-serif`;
+      const ratTextY = ratY + 78 + ratFit.lineHeight * 0.2;
+      drawWrapped(ctx, rationale, 70, ratTextY, ratMaxW, ratFit.lineHeight, 28);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '500 18px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('NPTE Institute  ·  Elevate Your Practice', WIDTH / 2, HEIGHT - 36);
     }
 
     // ---------- Live preview ----------
@@ -1344,25 +1388,45 @@
       mediaRecorder.start(100);
       startTime = performance.now();
       isRecording = true;
-      document.getElementById('status').textContent = 'Recording… 0s / 90s';
+      document.getElementById('status').textContent = `Recording… 0s / ${TOTAL_SECONDS}s`;
+
+      // Fixed-timestep recording so countdown never skips seconds
+      const frameDuration = 1000 / FPS; // ~33.33ms
+      let frameIndex = 0;
+      const totalFrames = Math.round(TOTAL_SECONDS * FPS);
+      let lastPreviewAt = 0;
 
       function animate(now) {
         if (!isRecording) return;
-        const elapsed = (now - startTime) / 1000;
-        const pct = Math.min(1, elapsed / TOTAL_SECONDS);
+
+        const elapsedMs = now - startTime;
+        // Advance frames based on real time, but clamp so we never jump multiple seconds of content
+        const targetFrame = Math.min(totalFrames, Math.floor(elapsedMs / frameDuration));
+        while (frameIndex < targetFrame) {
+          frameIndex++;
+        }
+        // Always render the current frame time (smooth, no stutter on the number)
+        const elapsed = Math.min(TOTAL_SECONDS, frameIndex / FPS);
+
+        const pct = elapsed / TOTAL_SECONDS;
         document.getElementById('progressBar').style.width = (pct * 100) + '%';
-        document.getElementById('status').textContent = `Recording… ${Math.floor(elapsed)}s / 90s`;
+        document.getElementById('status').textContent =
+          `Recording… ${Math.floor(elapsed)}s / ${TOTAL_SECONDS}s`;
 
         renderFrame(elapsed, currentData);
 
-        // Update preview ~15 fps to keep UI smooth
-        if (Math.floor(elapsed * 15) % 2 === 0) {
+        // Preview at ~12 fps (cheap)
+        if (now - lastPreviewAt > 80) {
           previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+          lastPreviewAt = now;
         }
 
-        if (elapsed < TOTAL_SECONDS) {
+        if (frameIndex < totalFrames) {
           animationId = requestAnimationFrame(animate);
         } else {
+          // Final frame
+          renderFrame(TOTAL_SECONDS - 0.05, currentData);
+          previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
           isRecording = false;
           mediaRecorder.stop();
         }
