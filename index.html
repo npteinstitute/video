@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NPTE Institute · Quiz Video Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #0A1F44;
+      --navy-2: #0F172A;
+      --teal: #0D9488;
+      --teal-light: #14B8A6;
+      --gold: #D4A017;
+      --gold-soft: rgba(212, 160, 23, 0.18);
+      --white: #FFFFFF;
+      --gray: #94A3B8;
+      --gray-2: #64748B;
+      --card: rgba(255, 255, 255, 0.05);
+      --card-hover: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.10);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --success: #10B981;
+      --danger: #EF4444;
+      --radius: 18px;
+      --radius-sm: 12px;
+      --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(ellipse at 20% 0%, #122a55 0%, var(--navy-2) 45%, #070d1a 100%);
+      color: var(--white);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ---------- Layout ---------- */
+    .app {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-light));
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.5px;
+      box-shadow: 0 8px 24px rgba(13, 148, 136, 0.35);
+    }
+
+    .brand h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .brand p {
+      color: var(--gray);
+      font-size: 0.82rem;
+      margin-top: 2px;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--gold-soft);
+      color: var(--gold);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      .main { grid-template-columns: 1fr; }
+      .preview-col { order: -1; }
+    }
+
+    /* ---------- Cards ---------- */
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+
+    .card + .card { margin-top: 18px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      margin-bottom: 18px;
+      letter-spacing: -0.01em;
+    }
+
+    .section-title .num {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--teal), var(--teal-light));
+      display: grid;
+      place-items: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 7px;
+    }
+
+    textarea, input[type="text"], select {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 13px 14px;
+      color: var(--white);
+      font-family: inherit;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 14px;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.22);
+    }
+
+    textarea::placeholder, input::placeholder {
+      color: var(--gray-2);
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .opt {
+      position: relative;
+    }
+
+    .opt span {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      background: rgba(20, 184, 166, 0.15);
+      color: var(--teal-light);
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+
+    .opt input {
+      padding-left: 42px;
+      margin-bottom: 0;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 560px) {
+      .options-grid, .row-2 { grid-template-columns: 1fr; }
+    }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 18px;
+      border: none;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s, opacity 0.18s, background 0.18s, box-shadow 0.18s;
+      user-select: none;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--teal) 0%, #0F766E 100%);
+      color: white;
+      box-shadow: 0 10px 28px -6px rgba(13, 148, 136, 0.45);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 32px -6px rgba(13, 148, 136, 0.55);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.07);
+      color: white;
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--card-hover);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--gray);
+      border: 1px solid transparent;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+    }
+
+    .btn-ghost:hover { color: white; }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ---------- Music ---------- */
+    .music-box {
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .music-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .music-tab {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--gray);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .music-tab.active {
+      background: rgba(13, 148, 136, 0.18);
+      border-color: rgba(13, 148, 136, 0.45);
+      color: var(--teal-light);
+    }
+
+    .file-drop {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 10px;
+      padding: 18px 12px;
+      text-align: center;
+      color: var(--gray);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .file-drop:hover, .file-drop.drag {
+      border-color: var(--teal);
+      background: rgba(13, 148, 136, 0.08);
+      color: var(--teal-light);
+    }
+
+    .file-drop input { display: none; }
+
+    .music-status {
+      font-size: 0.8rem;
+      color: var(--gray);
+      margin-top: 8px;
+      min-height: 18px;
+    }
+
+    /* ---------- Preview ---------- */
+    .preview-col {
+      position: sticky;
+      top: 20px;
+    }
+
+    .phone {
+      background: #050505;
+      border-radius: 36px;
+      padding: 11px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 40px 80px -24px rgba(0, 0, 0, 0.7);
+    }
+
+    .phone-inner {
+      background: linear-gradient(180deg, var(--navy), var(--navy-2));
+      border-radius: 28px;
+      overflow: hidden;
+      aspect-ratio: 9 / 16;
+      position: relative;
+    }
+
+    #previewCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 31, 68, 0.55);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .preview-overlay.show { opacity: 1; }
+
+    .status-line {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.88rem;
+      color: var(--gray);
+      min-height: 22px;
+    }
+
+    .progress-wrap {
+      margin-top: 12px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 99px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-wrap.show { display: block; }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--teal), var(--gold));
+      border-radius: 99px;
+      transition: width 0.15s linear;
+    }
+
+    .download-panel {
+      margin-top: 16px;
+      display: none;
+      animation: fadeUp 0.35s ease;
+    }
+
+    .download-panel.show { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .timeline {
+      display: flex;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: 0.7rem;
+      color: var(--gray-2);
+    }
+
+    .timeline span {
+      flex: 1;
+      text-align: center;
+      padding: 6px 4px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+    }
+
+    .timeline span strong {
+      display: block;
+      color: var(--gray);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      color: var(--gray-2);
+      font-size: 0.8rem;
+    }
+
+    footer a {
+      color: var(--teal-light);
+      text-decoration: none;
+    }
+
+    /* Hidden recording canvas */
+    #recordCanvas {
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+      width: 1080px;
+      height: 1920px;
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: var(--gray-2);
+      line-height: 1.4;
+      margin-top: -6px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-mark">NI</div>
+        <div>
+          <h1>NPTE Institute</h1>
+          <p>Quiz Video Studio · 90s vertical format</p>
+        </div>
+      </div>
+      <div class="badge">Social · 1080×1920</div>
+    </header>
+
+    <div class="main">
+      <!-- LEFT: form -->
+      <div class="form-col">
+        <div class="card">
+          <div class="section-title"><span class="num">1</span> Question</div>
+
+          <label for="question">Multiple-choice question</label>
+          <textarea id="question" placeholder="Type the full NPTE-style question here…"></textarea>
+
+          <label>Answer choices</label>
+          <div class="options-grid">
+            <div class="opt"><span>A</span><input type="text" id="optA" placeholder="Option A" /></div>
+            <div class="opt"><span>B</span><input type="text" id="optB" placeholder="Option B" /></div>
+            <div class="opt"><span>C</span><input type="text" id="optC" placeholder="Option C" /></div>
+            <div class="opt"><span>D</span><input type="text" id="optD" placeholder="Option D" /></div>
+          </div>
+
+          <div class="row-2">
+            <div>
+              <label for="correct">Correct answer</label>
+              <select id="correct">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+            <div>
+              <label for="brandLine">Brand line (optional)</label>
+              <input type="text" id="brandLine" value="NPTE Practice Question" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title"><span class="num">2</span> Rationale</div>
+          <label for="rationale">Explanation</label>
+          <textarea id="rationale" placeholder="Why is the correct answer right? Keep it clear and exam-focused…" style="min-height: 110px;"></textarea>
+        </div>
+
+        <div class="card">
+          <div class="section-title"><span class="num">3</span> Background music</div>
+          <p class="hint">Use a direct .mp3 / .m4a link (TikTok “download” tools often give one) or upload a local file. Local upload is more reliable.</p>
+
+          <div class="music-box">
+            <div class="music-tabs">
+              <button type="button" class="music-tab active" data-mode="file">Upload file</button>
+              <button type="button" class="music-tab" data-mode="url">Paste URL</button>
+              <button type="button" class="music-tab" data-mode="none">No music</button>
+            </div>
+
+            <div id="musicFilePanel">
+              <div class="file-drop" id="fileDrop">
+                <input type="file" id="musicFile" accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/wav,audio/*" />
+                Drop an audio file or click to browse
+              </div>
+            </div>
+
+            <div id="musicUrlPanel" style="display:none;">
+              <input type="text" id="musicUrl" placeholder="https://…/track.mp3" />
+            </div>
+
+            <div class="music-status" id="musicStatus">No music selected</div>
+
+            <div class="btn-row" style="margin-top: 10px;">
+              <button type="button" class="btn btn-secondary" id="testMusicBtn">Test music</button>
+              <button type="button" class="btn btn-ghost" id="clearMusicBtn">Clear</button>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" id="generateBtn">
+            Generate 90-second video
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: preview -->
+      <div class="preview-col">
+        <div class="phone">
+          <div class="phone-inner">
+            <canvas id="previewCanvas" width="360" height="640"></canvas>
+            <div class="preview-overlay" id="previewOverlay">
+              <div style="font-size: 2rem; margin-bottom: 8px;">●</div>
+              <div style="font-weight: 600;">Recording…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="status-line" id="status">Ready · edit fields to update preview</div>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="timeline">
+          <span><strong>0–65s</strong>Question</span>
+          <span><strong>65–70s</strong>Highlight</span>
+          <span><strong>70–90s</strong>Rationale</span>
+        </div>
+
+        <div class="download-panel" id="downloadPanel">
+          <div class="btn-row" style="margin-bottom: 10px;">
+            <button type="button" class="btn btn-primary" id="dlWebmBtn">Download WebM</button>
+            <button type="button" class="btn btn-secondary" id="dlMp4Btn">Download MP4</button>
+          </div>
+          <p class="hint" style="margin: 0 0 10px;">
+            WebM is the most reliable. MP4 appears when your browser supports it natively. TikTok / Instagram accept both; convert WebM → MP4 with HandBrake if needed.
+          </p>
+          <button type="button" class="btn btn-secondary" id="resetBtn">Create another</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Built for <strong>NPTE Institute</strong> · Drop this <code>index.html</code> on GitHub Pages
+    </footer>
+  </div>
+
+  <canvas id="recordCanvas" width="1080" height="1920"></canvas>
+
+  <script>
+    // ============================================================
+    // NPTE Institute · Quiz Video Studio
+    // Clean static page for GitHub Pages
+    // ============================================================
+
+    const WIDTH = 1080;
+    const HEIGHT = 1920;
+    const FPS = 30;
+    const TOTAL_SECONDS = 90;
+    const COUNTDOWN_END = 65;
+    const HIGHLIGHT_DURATION = 5;
+    const RATIONALE_START = 70;
+
+    const COLORS = {
+      navy: '#0A1F44',
+      dark: '#0F172A',
+      teal: '#0D9488',
+      tealLight: '#14B8A6',
+      gold: '#D4A017',
+      white: '#FFFFFF',
+      gray: '#94A3B8',
+      success: '#10B981'
+    };
+
+    // ---------- State ----------
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let animationId = null;
+    let isRecording = false;
+    let startTime = 0;
+    let videoBlob = null;
+    let currentData = null;
+    let testAudio = null;
+    let isTestingMusic = false;
+    let audioContext = null;
+    let musicMode = 'file'; // file | url | none
+    let musicObjectUrl = null;
+    let musicFileBuffer = null; // ArrayBuffer for recording
+
+    // Simple placeholder logo (circle + text). Replace with your own image if desired.
+    const logoImage = new Image();
+    let logoReady = false;
+    // Tiny 1×1 transparent – we draw a branded mark instead when no custom logo loads
+    logoImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    logoImage.onload = () => { logoReady = true; updatePreview(); };
+    logoImage.onerror = () => { logoReady = true; updatePreview(); };
+
+    const previewCanvas = document.getElementById('previewCanvas');
+    const previewCtx = previewCanvas.getContext('2d');
+    const recordCanvas = document.getElementById('recordCanvas');
+    const ctx = recordCanvas.getContext('2d', { alpha: false });
+
+    // ---------- Drawing helpers ----------
+    function roundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    function easeOut(t) {
+      return 1 - Math.pow(1 - t, 2.6);
+    }
+
+    function measureWrapped(c, text, maxWidth, lineHeight, maxLines = 40) {
+      const words = String(text || '').split(/\s+/).filter(Boolean);
+      if (!words.length) return { lines: 1, height: lineHeight };
+      let line = '';
+      let lines = 0;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (c.measureText(test).width > maxWidth && line) {
+          lines++;
+          line = words[i] + ' ';
+          if (lines >= maxLines) break;
+        } else {
+          line = test;
+        }
+      }
+      if (line.trim() && lines < maxLines) lines++;
+      return { lines: Math.max(1, lines), height: Math.max(lineHeight, lines * lineHeight) };
+    }
+
+    function drawWrapped(c, text, x, y, maxWidth, lineHeight, maxLines = 40) {
+      const words = String(text || '').split(/\s+/).filter(Boolean);
+      let line = '';
+      let lineCount = 0;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (c.measureText(test).width > maxWidth && line) {
+          c.fillText(line.trim(), x, y + lineCount * lineHeight);
+          line = words[i] + ' ';
+          lineCount++;
+          if (lineCount >= maxLines) return lineCount;
+        } else {
+          line = test;
+        }
+      }
+      if (line.trim() && lineCount < maxLines) {
+        c.fillText(line.trim(), x, y + lineCount * lineHeight);
+        lineCount++;
+      }
+      return lineCount;
+    }
+
+    function fitText(c, text, maxWidth, maxHeight, baseSize, weight = '600', lhFactor = 1.25) {
+      let size = baseSize;
+      let result;
+      do {
+        c.font = `${weight} ${size}px Inter, system-ui, sans-serif`;
+        const lh = Math.round(size * lhFactor);
+        const m = measureWrapped(c, text, maxWidth, lh, 40);
+        result = { fontSize: size, lineHeight: lh, height: m.height, lines: m.lines };
+        if (result.height <= maxHeight || size <= 18) break;
+        size -= 1;
+      } while (true);
+      return result;
+    }
+
+    function drawBrandLogo(c, cx, cy, radius) {
+      // Outer glow
+      c.save();
+      const glow = c.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius + 18);
+      glow.addColorStop(0, 'rgba(212,160,23,0.35)');
+      glow.addColorStop(1, 'rgba(212,160,23,0)');
+      c.beginPath();
+      c.arc(cx, cy, radius + 16, 0, Math.PI * 2);
+      c.fillStyle = glow;
+      c.fill();
+
+      // Gold ring
+      c.beginPath();
+      c.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+      c.strokeStyle = COLORS.gold;
+      c.lineWidth = 5;
+      c.stroke();
+
+      // White disc
+      c.beginPath();
+      c.arc(cx, cy, radius, 0, Math.PI * 2);
+      c.fillStyle = '#FFFFFF';
+      c.fill();
+
+      // Inner mark
+      c.beginPath();
+      c.arc(cx, cy, radius - 6, 0, Math.PI * 2);
+      c.fillStyle = COLORS.navy;
+      c.fill();
+
+      c.fillStyle = COLORS.white;
+      c.font = `800 ${Math.round(radius * 0.55)}px Inter, system-ui, sans-serif`;
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText('NI', cx, cy + 1);
+      c.restore();
+    }
+
+    // ---------- Frame renderer ----------
+    function renderFrame(timeSeconds, data) {
+      const { question, options, correct, rationale, brandLine } = data;
+
+      // Background
+      const grad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+      grad.addColorStop(0, COLORS.navy);
+      grad.addColorStop(0.5, COLORS.dark);
+      grad.addColorStop(1, COLORS.navy);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      if (timeSeconds < RATIONALE_START) {
+        // ===== QUESTION PHASE =====
+        drawBrandLogo(ctx, WIDTH / 2, 150, 95);
+
+        ctx.fillStyle = COLORS.gold;
+        ctx.font = '600 32px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(brandLine || 'NPTE Practice Question', WIDTH / 2, 290);
+
+        ctx.strokeStyle = COLORS.gold;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(WIDTH / 2 - 150, 318);
+        ctx.lineTo(WIDTH / 2 + 150, 318);
+        ctx.stroke();
+
+        // Question box – adaptive height
+        const qMaxW = WIDTH - 100;
+        const qMaxH = 480;
+        const qFit = fitText(ctx, question, qMaxW, qMaxH, 42, '600', 1.22);
+        const qPad = 36;
+        const qH = Math.min(520, Math.max(160, qFit.height + qPad * 2));
+        const qY = 350;
+
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        roundRect(ctx, 32, qY, WIDTH - 64, qH, 20);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+        ctx.lineWidth = 2.5;
+        roundRect(ctx, 32, qY, WIDTH - 64, qH, 20);
+        ctx.stroke();
+
+        ctx.fillStyle = COLORS.white;
+        ctx.font = `600 ${qFit.fontSize}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'left';
+        const qTextY = qY + qPad + qFit.lineHeight * 0.75;
+        drawWrapped(ctx, question, 58, qTextY, qMaxW, qFit.lineHeight, 12);
+
+        // Options
+        let optY = qY + qH + 22;
+        const letters = ['A', 'B', 'C', 'D'];
+        const highlightProg = timeSeconds >= COUNTDOWN_END
+          ? easeOut(Math.min(1, (timeSeconds - COUNTDOWN_END) / HIGHLIGHT_DURATION))
+          : 0;
+
+        // Pre-measure so we can scale if needed
+        const fits = {};
+        let totalH = 0;
+        letters.forEach(L => {
+          const fit = fitText(ctx, options[L] || '', WIDTH - 210, 160, 34, '500', 1.22);
+          fits[L] = fit;
+          totalH += Math.max(100, fit.height + 44) + 14;
+        });
+
+        const spaceLeft = 1680 - optY;
+        if (totalH > spaceLeft && spaceLeft > 200) {
+          const scale = spaceLeft / totalH;
+          letters.forEach(L => {
+            fits[L].fontSize = Math.max(17, Math.floor(fits[L].fontSize * scale));
+            fits[L].lineHeight = Math.round(fits[L].fontSize * 1.22);
+            const m = measureWrapped(ctx, options[L] || '', WIDTH - 210, fits[L].lineHeight, 8);
+            fits[L].height = m.height;
+          });
+        }
+
+        letters.forEach(L => {
+          const text = options[L] || '';
+          const fit = fits[L];
+          const h = Math.max(100, fit.height + 44);
+          const isCorrect = L === correct;
+          const prog = isCorrect ? highlightProg : 0;
+
+          if (prog > 0) {
+            ctx.shadowColor = `rgba(16,185,129,${0.4 * prog})`;
+            ctx.shadowBlur = 28 * prog;
+            ctx.fillStyle = `rgba(16,185,129,${0.14 * prog})`;
+          } else {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.07)';
+          }
+          roundRect(ctx, 32, optY, WIDTH - 64, h, 18);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          ctx.lineWidth = 2.5 + prog * 2;
+          ctx.strokeStyle = prog > 0
+            ? `rgba(16,185,129,${0.45 + 0.5 * prog})`
+            : 'rgba(255,255,255,0.13)';
+          roundRect(ctx, 32, optY, WIDTH - 64, h, 18);
+          ctx.stroke();
+
+          // Letter badge
+          const scale = 1 + prog * 0.08;
+          ctx.save();
+          ctx.translate(108, optY + h / 2);
+          ctx.scale(scale, scale);
+          ctx.beginPath();
+          ctx.arc(0, 0, 28, 0, Math.PI * 2);
+          ctx.fillStyle = prog > 0.25 ? COLORS.success : COLORS.teal;
+          ctx.fill();
+          ctx.fillStyle = COLORS.white;
+          ctx.font = '700 24px Inter, system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(L, 0, 1);
+          ctx.restore();
+
+          // Option text
+          ctx.fillStyle = (timeSeconds >= COUNTDOWN_END && !isCorrect)
+            ? 'rgba(255,255,255,0.35)'
+            : COLORS.white;
+          ctx.font = `500 ${fit.fontSize}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+          const firstY = optY + h / 2 - fit.height / 2 + fit.lineHeight * 0.72;
+          drawWrapped(ctx, text, 158, firstY, WIDTH - 210, fit.lineHeight, 6);
+
+          optY += h + 14;
+        });
+
+        // Countdown or highlight label
+        if (timeSeconds < COUNTDOWN_END) {
+          const remaining = Math.max(0, Math.ceil(COUNTDOWN_END - timeSeconds));
+          const progress = (COUNTDOWN_END - timeSeconds) / COUNTDOWN_END;
+          const cx = WIDTH / 2;
+          const cy = 1790;
+          const r = 78;
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.38)';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, r - 8, -Math.PI / 2, -Math.PI / 2 + (1 - progress) * Math.PI * 2);
+          ctx.strokeStyle = COLORS.tealLight;
+          ctx.lineWidth = 9;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+
+          ctx.fillStyle = COLORS.white;
+          ctx.font = '800 60px Inter, system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(remaining), cx, cy - 4);
+
+          ctx.fillStyle = 'rgba(255,255,255,0.65)';
+          ctx.font = '500 16px Inter, system-ui, sans-serif';
+          ctx.fillText('SECONDS', cx, cy + 32);
+        } else {
+          ctx.globalAlpha = highlightProg;
+          ctx.fillStyle = COLORS.success;
+          ctx.font = '700 28px Inter, system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✓  CORRECT ANSWER HIGHLIGHTED', WIDTH / 2, 1790);
+          ctx.globalAlpha = 1;
+        }
+      } else {
+        // ===== RATIONALE PHASE =====
+        const t = easeOut(Math.min(1, (timeSeconds - RATIONALE_START) / 1.1));
+        drawBrandLogo(ctx, WIDTH / 2, 150, 95);
+
+        ctx.globalAlpha = t;
+
+        ctx.fillStyle = COLORS.white;
+        ctx.font = '700 40px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText('NPTE Institute', WIDTH / 2, 290);
+
+        // Correct banner
+        ctx.fillStyle = 'rgba(16,185,129,0.14)';
+        roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+        ctx.fill();
+        ctx.strokeStyle = COLORS.success;
+        ctx.lineWidth = 3.5;
+        roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+        ctx.stroke();
+
+        ctx.fillStyle = COLORS.success;
+        ctx.font = '700 30px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✓  CORRECT ANSWER:  ' + correct, WIDTH / 2, 372);
+
+        // Correct option card
+        const correctText = options[correct] || '';
+        const cFit = fitText(ctx, correctText, WIDTH - 240, 100, 30, '600', 1.22);
+        const cH = Math.max(120, cFit.height + 48);
+        const cY = 440;
+
+        ctx.fillStyle = 'rgba(16,185,129,0.10)';
+        roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
+        ctx.fill();
+        ctx.strokeStyle = COLORS.success;
+        ctx.lineWidth = 3.5;
+        roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(120, cY + cH / 2, 32, 0, Math.PI * 2);
+        ctx.fillStyle = COLORS.success;
+        ctx.fill();
+        ctx.fillStyle = COLORS.white;
+        ctx.font = '700 28px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(correct, 120, cY + cH / 2 + 1);
+
+        ctx.fillStyle = COLORS.white;
+        ctx.font = `600 ${cFit.fontSize}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        const cFirstY = cY + cH / 2 - cFit.height / 2 + cFit.lineHeight * 0.72;
+        drawWrapped(ctx, correctText, 180, cFirstY, WIDTH - 240, cFit.lineHeight, 4);
+
+        // Rationale box
+        const ratMaxW = WIDTH - 120;
+        const ratFit = fitText(ctx, rationale, ratMaxW, 920, 30, '500', 1.32);
+        const ratH = Math.min(980, Math.max(420, ratFit.height + 130));
+        const ratY = cY + cH + 28;
+
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.13)';
+        ctx.lineWidth = 2.5;
+        roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
+        ctx.stroke();
+
+        ctx.fillStyle = COLORS.gold;
+        ctx.font = '700 24px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('RATIONALE', 70, ratY + 32);
+
+        ctx.fillStyle = COLORS.white;
+        ctx.font = `500 ${ratFit.fontSize}px Inter, system-ui, sans-serif`;
+        const ratTextY = ratY + 78 + ratFit.lineHeight * 0.2;
+        drawWrapped(ctx, rationale, 70, ratTextY, ratMaxW, ratFit.lineHeight, 28);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = '500 18px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('NPTE Institute  ·  Elevate Your Practice', WIDTH / 2, HEIGHT - 36);
+
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // ---------- Live preview ----------
+    function collectData() {
+      return {
+        question: document.getElementById('question').value.trim() || 'Your question will appear here…',
+        options: {
+          A: document.getElementById('optA').value.trim() || 'Option A',
+          B: document.getElementById('optB').value.trim() || 'Option B',
+          C: document.getElementById('optC').value.trim() || 'Option C',
+          D: document.getElementById('optD').value.trim() || 'Option D'
+        },
+        correct: document.getElementById('correct').value,
+        rationale: document.getElementById('rationale').value.trim() || 'Your rationale will appear here…',
+        brandLine: document.getElementById('brandLine').value.trim() || 'NPTE Practice Question'
+      };
+    }
+
+    function updatePreview() {
+      if (isRecording) return;
+      const data = collectData();
+      // Show a mid-question frame so users see options
+      renderFrame(12, data);
+      previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+    }
+
+    // Debounced live update
+    let previewTimer = null;
+    function schedulePreview() {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(updatePreview, 120);
+    }
+
+    ['question', 'optA', 'optB', 'optC', 'optD', 'correct', 'rationale', 'brandLine'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', schedulePreview);
+      el.addEventListener('change', schedulePreview);
+    });
+
+    // ---------- Music UI ----------
+    const musicStatus = document.getElementById('musicStatus');
+    const fileDrop = document.getElementById('fileDrop');
+    const musicFileInput = document.getElementById('musicFile');
+
+    document.querySelectorAll('.music-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.music-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        musicMode = tab.dataset.mode;
+        document.getElementById('musicFilePanel').style.display = musicMode === 'file' ? 'block' : 'none';
+        document.getElementById('musicUrlPanel').style.display = musicMode === 'url' ? 'block' : 'none';
+        if (musicMode === 'none') {
+          clearMusic();
+          musicStatus.textContent = 'No music selected';
+        }
+      });
+    });
+
+    fileDrop.addEventListener('click', () => musicFileInput.click());
+    fileDrop.addEventListener('dragover', e => {
+      e.preventDefault();
+      fileDrop.classList.add('drag');
+    });
+    fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag'));
+    fileDrop.addEventListener('drop', e => {
+      e.preventDefault();
+      fileDrop.classList.remove('drag');
+      if (e.dataTransfer.files?.[0]) handleMusicFile(e.dataTransfer.files[0]);
+    });
+
+    musicFileInput.addEventListener('change', () => {
+      if (musicFileInput.files?.[0]) handleMusicFile(musicFileInput.files[0]);
+    });
+
+    async function handleMusicFile(file) {
+      clearMusic(false);
+      musicObjectUrl = URL.createObjectURL(file);
+      musicFileBuffer = await file.arrayBuffer();
+      musicStatus.textContent = `Loaded: ${file.name}`;
+      musicMode = 'file';
+      document.querySelectorAll('.music-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.mode === 'file');
+      });
+      document.getElementById('musicFilePanel').style.display = 'block';
+      document.getElementById('musicUrlPanel').style.display = 'none';
+    }
+
+    function clearMusic(resetMode = true) {
+      if (testAudio) {
+        testAudio.pause();
+        testAudio = null;
+        isTestingMusic = false;
+        document.getElementById('testMusicBtn').textContent = 'Test music';
+      }
+      if (musicObjectUrl) {
+        URL.revokeObjectURL(musicObjectUrl);
+        musicObjectUrl = null;
+      }
+      musicFileBuffer = null;
+      musicFileInput.value = '';
+      document.getElementById('musicUrl').value = '';
+      if (resetMode) musicStatus.textContent = 'No music selected';
+    }
+
+    document.getElementById('clearMusicBtn').addEventListener('click', () => {
+      clearMusic();
+      musicMode = 'none';
+      document.querySelectorAll('.music-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.mode === 'none');
+      });
+      document.getElementById('musicFilePanel').style.display = 'none';
+      document.getElementById('musicUrlPanel').style.display = 'none';
+    });
+
+    document.getElementById('testMusicBtn').addEventListener('click', () => {
+      if (isTestingMusic && testAudio) {
+        testAudio.pause();
+        testAudio.currentTime = 0;
+        isTestingMusic = false;
+        document.getElementById('testMusicBtn').textContent = 'Test music';
+        return;
+      }
+
+      let src = null;
+      if (musicMode === 'file' && musicObjectUrl) src = musicObjectUrl;
+      else if (musicMode === 'url') {
+        src = document.getElementById('musicUrl').value.trim();
+      }
+
+      if (!src) {
+        alert('Select a file or paste a direct audio URL first.');
+        return;
+      }
+
+      if (testAudio) testAudio.pause();
+      testAudio = new Audio(src);
+      testAudio.volume = 0.4;
+      testAudio.loop = true;
+      testAudio.play()
+        .then(() => {
+          isTestingMusic = true;
+          document.getElementById('testMusicBtn').textContent = 'Stop music';
+        })
+        .catch(() => {
+          alert('Could not play this track. For URLs, use a direct .mp3 link (not a TikTok page). Local files usually work best.');
+        });
+    });
+
+    // ---------- Audio for recording ----------
+    async function createAudioStream() {
+      if (musicMode === 'none') return null;
+
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const destination = audioContext.createMediaStreamDestination();
+        let audioBuffer;
+
+        if (musicMode === 'file' && musicFileBuffer) {
+          audioBuffer = await audioContext.decodeAudioData(musicFileBuffer.slice(0));
+        } else if (musicMode === 'url') {
+          const url = document.getElementById('musicUrl').value.trim();
+          if (!url) return null;
+          const res = await fetch(url, { mode: 'cors' });
+          if (!res.ok) throw new Error('Fetch failed');
+          const ab = await res.arrayBuffer();
+          audioBuffer = await audioContext.decodeAudioData(ab);
+        } else {
+          return null;
+        }
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.loop = true;
+        const gain = audioContext.createGain();
+        gain.gain.value = 0.32;
+        source.connect(gain);
+        gain.connect(destination);
+        source.start(0);
+        return destination.stream;
+      } catch (err) {
+        console.warn('Music load failed:', err);
+        alert('Music could not be mixed into the recording (CORS or format). Video will be created without music.');
+        return null;
+      }
+    }
+
+    // ---------- Generation ----------
+    async function startGeneration() {
+      const question = document.getElementById('question').value.trim();
+      const optA = document.getElementById('optA').value.trim();
+      const optB = document.getElementById('optB').value.trim();
+      const optC = document.getElementById('optC').value.trim();
+      const optD = document.getElementById('optD').value.trim();
+      const rationale = document.getElementById('rationale').value.trim();
+
+      if (!question || !optA || !optB || !optC || !optD || !rationale) {
+        alert('Please fill in the question, all four options, and the rationale.');
+        return;
+      }
+
+      if (testAudio) {
+        testAudio.pause();
+        isTestingMusic = false;
+        document.getElementById('testMusicBtn').textContent = 'Test music';
+      }
+
+      currentData = collectData();
+      // Ensure real text (not placeholders) for the actual render
+      currentData.question = question;
+      currentData.options = { A: optA, B: optB, C: optC, D: optD };
+      currentData.rationale = rationale;
+
+      document.getElementById('generateBtn').disabled = true;
+      document.getElementById('status').textContent = 'Preparing…';
+      document.getElementById('progressWrap').classList.add('show');
+      document.getElementById('progressBar').style.width = '0%';
+      document.getElementById('downloadPanel').classList.remove('show');
+      document.getElementById('previewOverlay').classList.add('show');
+      recordedChunks = [];
+      videoBlob = null;
+
+      const videoStream = recordCanvas.captureStream(FPS);
+      const audioStream = await createAudioStream();
+
+      let combined = videoStream;
+      if (audioStream) {
+        combined = new MediaStream([
+          ...videoStream.getVideoTracks(),
+          ...audioStream.getAudioTracks()
+        ]);
+      }
+
+      const mimeCandidates = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm'
+      ];
+      const mime = mimeCandidates.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+
+      try {
+        mediaRecorder = new MediaRecorder(combined, {
+          mimeType: mime,
+          videoBitsPerSecond: 5000000,
+          audioBitsPerSecond: 128000
+        });
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(combined, { mimeType: mime });
+      }
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        if (audioContext) {
+          audioContext.close().catch(() => {});
+          audioContext = null;
+        }
+        videoBlob = new Blob(recordedChunks, { type: mime });
+        document.getElementById('status').textContent = 'Video ready';
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('downloadPanel').classList.add('show');
+        document.getElementById('generateBtn').disabled = false;
+        document.getElementById('previewOverlay').classList.remove('show');
+
+        // Prefer showing MP4 button only when we actually got mp4
+        const isMp4 = mime.includes('mp4');
+        document.getElementById('dlMp4Btn').style.display = isMp4 ? 'inline-flex' : 'none';
+        if (!isMp4) {
+          document.getElementById('dlWebmBtn').textContent = 'Download WebM';
+        }
+
+        renderFrame(TOTAL_SECONDS - 0.4, currentData);
+        previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+      };
+
+      mediaRecorder.start(100);
+      startTime = performance.now();
+      isRecording = true;
+      document.getElementById('status').textContent = 'Recording… 0s / 90s';
+
+      function animate(now) {
+        if (!isRecording) return;
+        const elapsed = (now - startTime) / 1000;
+        const pct = Math.min(1, elapsed / TOTAL_SECONDS);
+        document.getElementById('progressBar').style.width = (pct * 100) + '%';
+        document.getElementById('status').textContent = `Recording… ${Math.floor(elapsed)}s / 90s`;
+
+        renderFrame(elapsed, currentData);
+
+        // Update preview ~15 fps to keep UI smooth
+        if (Math.floor(elapsed * 15) % 2 === 0) {
+          previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+        }
+
+        if (elapsed < TOTAL_SECONDS) {
+          animationId = requestAnimationFrame(animate);
+        } else {
+          isRecording = false;
+          mediaRecorder.stop();
+        }
+      }
+      animationId = requestAnimationFrame(animate);
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', startGeneration);
+
+    function download(format) {
+      if (!videoBlob) return;
+      const isMp4Blob = videoBlob.type.includes('mp4');
+      let ext = 'webm';
+      if (format === 'mp4') {
+        ext = isMp4Blob ? 'mp4' : 'webm';
+      }
+      const url = URL.createObjectURL(videoBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NPTE_Quiz_${Date.now()}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    document.getElementById('dlWebmBtn').addEventListener('click', () => download('webm'));
+    document.getElementById('dlMp4Btn').addEventListener('click', () => download('mp4'));
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      ['question', 'optA', 'optB', 'optC', 'optD', 'rationale'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('correct').value = 'A';
+      document.getElementById('brandLine').value = 'NPTE Practice Question';
+      document.getElementById('status').textContent = 'Ready · edit fields to update preview';
+      document.getElementById('progressWrap').classList.remove('show');
+      document.getElementById('progressBar').style.width = '0%';
+      document.getElementById('downloadPanel').classList.remove('show');
+      document.getElementById('generateBtn').disabled = false;
+      clearMusic();
+      musicMode = 'file';
+      document.querySelectorAll('.music-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.mode === 'file');
+      });
+      document.getElementById('musicFilePanel').style.display = 'block';
+      document.getElementById('musicUrlPanel').style.display = 'none';
+      updatePreview();
+    });
+
+    // Initial paint
+    updatePreview();
+  </script>
+</body>
+</html>
