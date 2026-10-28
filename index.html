@@ -669,6 +669,7 @@
     let musicMode = 'file'; // file | url | none
     let musicObjectUrl = null;
     let musicFileBuffer = null; // ArrayBuffer for recording
+    let layoutCache = null;
 
     const logoImage = new Image();
     let logoReady = false;
@@ -805,6 +806,53 @@
     }
 
     // ---------- Frame renderer ----------
+    // Pre-compute expensive text layout once per video
+    function buildLayoutCache(data) {
+      const { question, options, correct, rationale, brandLine } = data;
+      const qMaxW = WIDTH - 100;
+      const qFit = fitText(ctx, question, qMaxW, 480, 42, '600', 1.22);
+      const qPad = 36;
+      const qH = Math.min(520, Math.max(160, qFit.height + qPad * 2));
+      const qY = 350;
+
+      const letters = ['A', 'B', 'C', 'D'];
+      const fits = {};
+      let totalH = 0;
+      let optY = qY + qH + 22;
+      letters.forEach(L => {
+        const fit = fitText(ctx, options[L] || '', WIDTH - 210, 160, 34, '500', 1.22);
+        fits[L] = { ...fit };
+        totalH += Math.max(100, fit.height + 44) + 14;
+      });
+      const spaceLeft = 1680 - optY;
+      if (totalH > spaceLeft && spaceLeft > 200) {
+        const scale = spaceLeft / totalH;
+        letters.forEach(L => {
+          fits[L].fontSize = Math.max(17, Math.floor(fits[L].fontSize * scale));
+          fits[L].lineHeight = Math.round(fits[L].fontSize * 1.22);
+          const m = measureWrapped(ctx, options[L] || '', WIDTH - 210, fits[L].lineHeight, 8);
+          fits[L].height = m.height;
+        });
+      }
+
+      const correctText = options[correct] || '';
+      const cFit = fitText(ctx, correctText, WIDTH - 240, 100, 30, '600', 1.22);
+      const cH = Math.max(120, cFit.height + 48);
+      const cY = 440;
+      const ratMaxW = WIDTH - 120;
+      const ratFit = fitText(ctx, rationale, ratMaxW, 920, 30, '500', 1.32);
+      const ratH = Math.min(980, Math.max(420, ratFit.height + 130));
+      const ratY = cY + cH + 28;
+
+      return {
+        qFit, qH, qY, qPad, qMaxW,
+        fits, letters,
+        cFit, cH, cY, correctText,
+        ratFit, ratH, ratY, ratMaxW,
+        brandLine: brandLine || 'NPTE Practice Question'
+      };
+    }
+
     function renderFrame(timeSeconds, data) {
       const { question, options, correct, rationale, brandLine } = data;
       const t = Math.max(0, Math.min(timeSeconds, TOTAL_SECONDS));
@@ -850,7 +898,8 @@
     }
 
     function drawQuestionPhase(timeSeconds, data) {
-      const { question, options, correct, brandLine } = data;
+      const { question, options, correct } = data;
+      const L = layoutCache || buildLayoutCache(data);
 
       drawBrandLogo(ctx, WIDTH / 2, 150, 95);
 
@@ -858,7 +907,7 @@
       ctx.font = '600 32px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText(brandLine || 'NPTE Practice Question', WIDTH / 2, 290);
+      ctx.fillText(L.brandLine, WIDTH / 2, 290);
 
       ctx.strokeStyle = COLORS.gold;
       ctx.lineWidth = 2.5;
@@ -867,14 +916,8 @@
       ctx.lineTo(WIDTH / 2 + 150, 318);
       ctx.stroke();
 
-      // Question box
-      const qMaxW = WIDTH - 100;
-      const qMaxH = 480;
-      const qFit = fitText(ctx, question, qMaxW, qMaxH, 42, '600', 1.22);
-      const qPad = 36;
-      const qH = Math.min(520, Math.max(160, qFit.height + qPad * 2));
-      const qY = 350;
-
+      // Question box (cached)
+      const qY = L.qY, qH = L.qH, qFit = L.qFit, qPad = L.qPad, qMaxW = L.qMaxW;
       ctx.fillStyle = 'rgba(255,255,255,0.07)';
       roundRect(ctx, 32, qY, WIDTH - 64, qH, 20);
       ctx.fill();
@@ -889,37 +932,17 @@
       const qTextY = qY + qPad + qFit.lineHeight * 0.75;
       drawWrapped(ctx, question, 58, qTextY, qMaxW, qFit.lineHeight, 12);
 
-      // Options + highlight progress
+      // Options
       let optY = qY + qH + 22;
-      const letters = ['A', 'B', 'C', 'D'];
       const highlightProg = timeSeconds >= COUNTDOWN_END
         ? easeOut(Math.min(1, (timeSeconds - COUNTDOWN_END) / HIGHLIGHT_SECONDS))
         : 0;
 
-      const fits = {};
-      let totalH = 0;
-      letters.forEach(L => {
-        const fit = fitText(ctx, options[L] || '', WIDTH - 210, 160, 34, '500', 1.22);
-        fits[L] = fit;
-        totalH += Math.max(100, fit.height + 44) + 14;
-      });
-
-      const spaceLeft = 1680 - optY;
-      if (totalH > spaceLeft && spaceLeft > 200) {
-        const scale = spaceLeft / totalH;
-        letters.forEach(L => {
-          fits[L].fontSize = Math.max(17, Math.floor(fits[L].fontSize * scale));
-          fits[L].lineHeight = Math.round(fits[L].fontSize * 1.22);
-          const m = measureWrapped(ctx, options[L] || '', WIDTH - 210, fits[L].lineHeight, 8);
-          fits[L].height = m.height;
-        });
-      }
-
-      letters.forEach(L => {
-        const text = options[L] || '';
-        const fit = fits[L];
+      L.letters.forEach(letter => {
+        const text = options[letter] || '';
+        const fit = L.fits[letter];
         const h = Math.max(100, fit.height + 44);
-        const isCorrect = L === correct;
+        const isCorrect = letter === correct;
         const prog = isCorrect ? highlightProg : 0;
 
         if (prog > 0) {
@@ -953,7 +976,7 @@
         ctx.font = '700 24px Inter, system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(L, 0, 1);
+        ctx.fillText(letter, 0, 1);
         ctx.restore();
 
         ctx.fillStyle = (timeSeconds >= COUNTDOWN_END && !isCorrect)
@@ -968,12 +991,16 @@
         optY += h + 14;
       });
 
-      // Countdown ring — smooth continuous remaining time
+      // ===== COUNTDOWN — pure wall-clock, never skips =====
       if (timeSeconds < COUNTDOWN_END) {
+        // remainingExact goes 60 → 0 linearly with real time
         const remainingExact = Math.max(0, COUNTDOWN_END - timeSeconds);
-        // Display integer that only changes once per second (no skipping)
-        const remainingDisplay = Math.max(0, Math.ceil(remainingExact - 0.001));
-        const progress = remainingExact / COUNTDOWN_END; // 1 → 0
+        // Integer on screen: 60 for [0,1), 59 for [1,2), ... 1 for [59,60), 0 at 60
+        let remainingDisplay = Math.ceil(remainingExact);
+        if (remainingDisplay > COUNTDOWN_END) remainingDisplay = COUNTDOWN_END;
+        if (remainingExact <= 0) remainingDisplay = 0;
+
+        const progress = remainingExact / COUNTDOWN_END; // 1 at start → 0 at end
         const cx = WIDTH / 2;
         const cy = 1790;
         const r = 78;
@@ -983,14 +1010,12 @@
         ctx.fillStyle = 'rgba(0,0,0,0.38)';
         ctx.fill();
 
-        // Track
         ctx.beginPath();
         ctx.arc(cx, cy, r - 8, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(255,255,255,0.12)';
         ctx.lineWidth = 9;
         ctx.stroke();
 
-        // Progress arc (smooth)
         ctx.beginPath();
         ctx.arc(cx, cy, r - 8, -Math.PI / 2, -Math.PI / 2 + (1 - progress) * Math.PI * 2);
         ctx.strokeStyle = COLORS.tealLight;
@@ -1008,7 +1033,6 @@
         ctx.font = '500 16px Inter, system-ui, sans-serif';
         ctx.fillText('SECONDS', cx, cy + 32);
       } else {
-        // Brief "correct" label during highlight
         const hp = easeOut(Math.min(1, (timeSeconds - COUNTDOWN_END) / HIGHLIGHT_SECONDS));
         ctx.globalAlpha = hp;
         ctx.fillStyle = COLORS.success;
@@ -1022,6 +1046,7 @@
 
     function drawRationalePhase(timeSeconds, data) {
       const { options, correct, rationale } = data;
+      const L = layoutCache || buildLayoutCache(data);
 
       drawBrandLogo(ctx, WIDTH / 2, 150, 95);
 
@@ -1031,7 +1056,6 @@
       ctx.textBaseline = 'alphabetic';
       ctx.fillText('NPTE Institute', WIDTH / 2, 290);
 
-      // Correct banner
       ctx.fillStyle = 'rgba(16,185,129,0.14)';
       roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
       ctx.fill();
@@ -1046,12 +1070,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillText('✓  CORRECT ANSWER:  ' + correct, WIDTH / 2, 372);
 
-      // Correct option card
-      const correctText = options[correct] || '';
-      const cFit = fitText(ctx, correctText, WIDTH - 240, 100, 30, '600', 1.22);
-      const cH = Math.max(120, cFit.height + 48);
-      const cY = 440;
-
+      const cFit = L.cFit, cH = L.cH, cY = L.cY, correctText = L.correctText;
       ctx.fillStyle = 'rgba(16,185,129,0.10)';
       roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
       ctx.fill();
@@ -1077,12 +1096,7 @@
       const cFirstY = cY + cH / 2 - cFit.height / 2 + cFit.lineHeight * 0.72;
       drawWrapped(ctx, correctText, 180, cFirstY, WIDTH - 240, cFit.lineHeight, 4);
 
-      // Rationale box
-      const ratMaxW = WIDTH - 120;
-      const ratFit = fitText(ctx, rationale, ratMaxW, 920, 30, '500', 1.32);
-      const ratH = Math.min(980, Math.max(420, ratFit.height + 130));
-      const ratY = cY + cH + 28;
-
+      const ratFit = L.ratFit, ratH = L.ratH, ratY = L.ratY, ratMaxW = L.ratMaxW;
       ctx.fillStyle = 'rgba(255,255,255,0.06)';
       roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
       ctx.fill();
@@ -1128,7 +1142,8 @@
     function updatePreview() {
       if (isRecording) return;
       const data = collectData();
-      // Show a mid-question frame so users see options
+      layoutCache = buildLayoutCache(data);
+      // Show a mid-question frame so users see options + countdown mid-way
       renderFrame(12, data);
       previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
     }
@@ -1363,6 +1378,8 @@
       };
 
       mediaRecorder.onstop = () => {
+        if (animationId) { clearInterval(animationId); animationId = null; }
+        isRecording = false;
         if (audioContext) {
           audioContext.close().catch(() => {});
           audioContext = null;
@@ -1390,48 +1407,46 @@
       isRecording = true;
       document.getElementById('status').textContent = `Recording… 0s / ${TOTAL_SECONDS}s`;
 
-      // Fixed-timestep recording so countdown never skips seconds
-      const frameDuration = 1000 / FPS; // ~33.33ms
-      let frameIndex = 0;
-      const totalFrames = Math.round(TOTAL_SECONDS * FPS);
-      let lastPreviewAt = 0;
+      // Pre-cache layout so every frame is cheap (prevents timer freezes)
+      layoutCache = buildLayoutCache(currentData);
 
-      function animate(now) {
+      // Wall-clock driven interval — countdown never skips
+      const frameMs = 1000 / FPS;
+      let lastDrawnSecond = -1;
+
+      function tick() {
         if (!isRecording) return;
 
-        const elapsedMs = now - startTime;
-        // Advance frames based on real time, but clamp so we never jump multiple seconds of content
-        const targetFrame = Math.min(totalFrames, Math.floor(elapsedMs / frameDuration));
-        while (frameIndex < targetFrame) {
-          frameIndex++;
-        }
-        // Always render the current frame time (smooth, no stutter on the number)
-        const elapsed = Math.min(TOTAL_SECONDS, frameIndex / FPS);
-
+        const elapsed = Math.min(TOTAL_SECONDS, (performance.now() - startTime) / 1000);
         const pct = elapsed / TOTAL_SECONDS;
         document.getElementById('progressBar').style.width = (pct * 100) + '%';
-        document.getElementById('status').textContent =
-          `Recording… ${Math.floor(elapsed)}s / ${TOTAL_SECONDS}s`;
+
+        const sec = Math.floor(elapsed);
+        if (sec !== lastDrawnSecond) {
+          lastDrawnSecond = sec;
+          document.getElementById('status').textContent =
+            `Recording… ${sec}s / ${TOTAL_SECONDS}s`;
+        }
 
         renderFrame(elapsed, currentData);
+        previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
 
-        // Preview at ~12 fps (cheap)
-        if (now - lastPreviewAt > 80) {
-          previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
-          lastPreviewAt = now;
-        }
-
-        if (frameIndex < totalFrames) {
-          animationId = requestAnimationFrame(animate);
-        } else {
-          // Final frame
-          renderFrame(TOTAL_SECONDS - 0.05, currentData);
-          previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+        if (elapsed >= TOTAL_SECONDS - 0.001) {
           isRecording = false;
-          mediaRecorder.stop();
+          clearInterval(animationId);
+          animationId = null;
+          // Hold final frame briefly then stop recorder
+          renderFrame(TOTAL_SECONDS - 0.02, currentData);
+          previewCtx.drawImage(recordCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+          setTimeout(() => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+          }, 120);
         }
       }
-      animationId = requestAnimationFrame(animate);
+
+      // Kick first frame immediately, then steady interval
+      tick();
+      animationId = setInterval(tick, frameMs);
     }
 
     document.getElementById('generateBtn').addEventListener('click', startGeneration);
