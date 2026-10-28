@@ -704,6 +704,18 @@
     function easeOut(t) {
       return 1 - Math.pow(1 - t, 2.6);
     }
+    function easeInOut(t) {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+    function easeOutBack(t) {
+      const c1 = 1.4;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+    function clamp01(x) { return Math.max(0, Math.min(1, x)); }
 
     function measureWrapped(c, text, maxWidth, lineHeight, maxLines = 40) {
       const words = String(text || '').split(/\s+/).filter(Boolean);
@@ -854,10 +866,9 @@
     }
 
     function renderFrame(timeSeconds, data) {
-      const { question, options, correct, rationale, brandLine } = data;
       const t = Math.max(0, Math.min(timeSeconds, TOTAL_SECONDS));
 
-      // Background
+      // Background always full
       const grad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
       grad.addColorStop(0, COLORS.navy);
       grad.addColorStop(0.5, COLORS.dark);
@@ -865,34 +876,61 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-      // Crossfade: question phase fully visible until countdown ends,
-      // then 0.6s blend into rationale during highlight window.
-      const transitionStart = COUNTDOWN_END;
-      const transitionLen = 0.85;
-      let qAlpha = 1;
-      let rAlpha = 0;
-      if (t < transitionStart) {
+      // ===== Transition design =====
+      // 0–60s     question solid
+      // 60–61.4s  correct answer highlight builds
+      // 61.4–63.2s cinematic handoff (question exits, rationale enters)
+      // 63.2–78s  rationale solid
+      const HL_START = COUNTDOWN_END;                 // 60
+      const XFADE_START = COUNTDOWN_END + 1.35;       // 61.35
+      const XFADE_LEN = 1.85;                         // ends ~63.2
+      const XFADE_END = XFADE_START + XFADE_LEN;
+
+      let qAlpha = 1, rAlpha = 0, xProgress = 0;
+      if (t < XFADE_START) {
         qAlpha = 1;
         rAlpha = 0;
-      } else if (t < transitionStart + transitionLen) {
-        const p = easeOut((t - transitionStart) / transitionLen);
-        qAlpha = 1 - p;
-        rAlpha = p;
+        xProgress = 0;
+      } else if (t < XFADE_END) {
+        xProgress = easeInOut((t - XFADE_START) / XFADE_LEN);
+        qAlpha = 1 - xProgress;
+        rAlpha = xProgress;
       } else {
         qAlpha = 0;
         rAlpha = 1;
+        xProgress = 1;
       }
 
-      if (qAlpha > 0.01) {
+      // Soft vignette flash at the peak of the handoff
+      if (xProgress > 0.15 && xProgress < 0.85) {
+        const flash = Math.sin((xProgress - 0.15) / 0.7 * Math.PI);
+        ctx.fillStyle = `rgba(20,184,166,${0.06 * flash})`;
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      }
+
+      if (qAlpha > 0.008) {
         ctx.save();
+        // Question exits: slight rise + scale down + fade
+        const exitY = -40 * easeOutCubic(xProgress);
+        const exitScale = 1 - 0.04 * xProgress;
+        ctx.translate(WIDTH / 2, HEIGHT / 2 + exitY);
+        ctx.scale(exitScale, exitScale);
+        ctx.translate(-WIDTH / 2, -HEIGHT / 2);
         ctx.globalAlpha = qAlpha;
         drawQuestionPhase(t, data);
         ctx.restore();
       }
-      if (rAlpha > 0.01) {
+
+      if (rAlpha > 0.008) {
         ctx.save();
+        // Rationale enters: rise from below + subtle scale up
+        const enterY = 55 * (1 - easeOutCubic(xProgress));
+        const enterScale = 0.96 + 0.04 * easeOutCubic(xProgress);
+        ctx.translate(WIDTH / 2, HEIGHT / 2 + enterY);
+        ctx.scale(enterScale, enterScale);
+        ctx.translate(-WIDTH / 2, -HEIGHT / 2);
         ctx.globalAlpha = rAlpha;
-        drawRationalePhase(t, data);
+        drawRationalePhase(t, data, xProgress);
         ctx.restore();
       }
     }
@@ -1044,33 +1082,68 @@
       }
     }
 
-    function drawRationalePhase(timeSeconds, data) {
+    function drawRationalePhase(timeSeconds, data, xProgress = 1) {
       const { options, correct, rationale } = data;
       const L = layoutCache || buildLayoutCache(data);
 
-      drawBrandLogo(ctx, WIDTH / 2, 150, 95);
+      // Stagger helpers (0→1 based on overall xProgress)
+      function stagger(start, end) {
+        return easeOutCubic(clamp01((xProgress - start) / Math.max(0.01, end - start)));
+      }
+      const aLogo = stagger(0.00, 0.35);
+      const aTitle = stagger(0.08, 0.42);
+      const aBanner = stagger(0.18, 0.55);
+      const aOption = stagger(0.30, 0.68);
+      const aRationale = stagger(0.45, 0.90);
+      const aFooter = stagger(0.70, 1.00);
 
+      // Logo
+      ctx.save();
+      ctx.globalAlpha *= aLogo;
+      const logoY = 150 + (1 - aLogo) * 20;
+      drawBrandLogo(ctx, WIDTH / 2, logoY, 95);
+      ctx.restore();
+
+      // Title
+      ctx.save();
+      ctx.globalAlpha *= aTitle;
       ctx.fillStyle = COLORS.white;
       ctx.font = '700 40px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText('NPTE Institute', WIDTH / 2, 290);
+      ctx.fillText('NPTE Institute', WIDTH / 2, 290 + (1 - aTitle) * 16);
+      ctx.restore();
 
+      // Correct banner
+      ctx.save();
+      ctx.globalAlpha *= aBanner;
+      const bannerY = 330 + (1 - aBanner) * 24;
       ctx.fillStyle = 'rgba(16,185,129,0.14)';
-      roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+      roundRect(ctx, 70, bannerY, WIDTH - 140, 84, 18);
       ctx.fill();
       ctx.strokeStyle = COLORS.success;
       ctx.lineWidth = 3.5;
-      roundRect(ctx, 70, 330, WIDTH - 140, 84, 18);
+      roundRect(ctx, 70, bannerY, WIDTH - 140, 84, 18);
       ctx.stroke();
+      // Soft inner glow on banner
+      ctx.shadowColor = 'rgba(16,185,129,0.35)';
+      ctx.shadowBlur = 18 * aBanner;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
 
       ctx.fillStyle = COLORS.success;
       ctx.font = '700 30px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('✓  CORRECT ANSWER:  ' + correct, WIDTH / 2, 372);
+      ctx.fillText('✓  CORRECT ANSWER:  ' + correct, WIDTH / 2, bannerY + 42);
+      ctx.restore();
 
-      const cFit = L.cFit, cH = L.cH, cY = L.cY, correctText = L.correctText;
+      // Correct option card
+      ctx.save();
+      ctx.globalAlpha *= aOption;
+      const cFit = L.cFit, cH = L.cH, correctText = L.correctText;
+      const cY = L.cY + (1 - aOption) * 30;
+
       ctx.fillStyle = 'rgba(16,185,129,0.10)';
       roundRect(ctx, 36, cY, WIDTH - 72, cH, 18);
       ctx.fill();
@@ -1095,8 +1168,14 @@
       ctx.textBaseline = 'alphabetic';
       const cFirstY = cY + cH / 2 - cFit.height / 2 + cFit.lineHeight * 0.72;
       drawWrapped(ctx, correctText, 180, cFirstY, WIDTH - 240, cFit.lineHeight, 4);
+      ctx.restore();
 
-      const ratFit = L.ratFit, ratH = L.ratH, ratY = L.ratY, ratMaxW = L.ratMaxW;
+      // Rationale box
+      ctx.save();
+      ctx.globalAlpha *= aRationale;
+      const ratFit = L.ratFit, ratH = L.ratH, ratMaxW = L.ratMaxW;
+      const ratY = L.ratY + (1 - aRationale) * 36;
+
       ctx.fillStyle = 'rgba(255,255,255,0.06)';
       roundRect(ctx, 36, ratY, WIDTH - 72, ratH, 20);
       ctx.fill();
@@ -1115,12 +1194,17 @@
       ctx.font = `500 ${ratFit.fontSize}px Inter, system-ui, sans-serif`;
       const ratTextY = ratY + 78 + ratFit.lineHeight * 0.2;
       drawWrapped(ctx, rationale, 70, ratTextY, ratMaxW, ratFit.lineHeight, 28);
+      ctx.restore();
 
+      // Footer
+      ctx.save();
+      ctx.globalAlpha *= aFooter;
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.font = '500 18px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('NPTE Institute  ·  Elevate Your Practice', WIDTH / 2, HEIGHT - 36);
+      ctx.restore();
     }
 
     // ---------- Live preview ----------
